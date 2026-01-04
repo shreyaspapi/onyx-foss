@@ -251,6 +251,16 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+    encrypted_chat_sessions: Mapped[list["EncryptedChatSession"]] = relationship(
+        "EncryptedChatSession",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    encrypted_secrets: Mapped[list["EncryptedUserSecret"]] = relationship(
+        "EncryptedUserSecret",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
     oauth_user_tokens: Mapped[list["OAuthUserToken"]] = relationship(
         "OAuthUserToken",
         back_populates="user",
@@ -296,6 +306,80 @@ class Memory(Base):
     )
 
     user: Mapped["User"] = relationship("User", back_populates="memories")
+
+
+class EncryptedChatSession(Base):
+    """Stores end-to-end encrypted chat sessions.
+    
+    The encrypted_data contains the full session data (messages, metadata, etc.)
+    encrypted client-side. The server cannot decrypt this data.
+    """
+
+    __tablename__ = "encrypted_chat_session"
+
+    id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), primary_key=True, default=uuid4
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    # Encrypted blob containing full session data
+    encrypted_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    # Encryption format version for future algorithm upgrades
+    encryption_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+    # Optional: encrypted session name for display in sidebar
+    encrypted_name: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
+
+    user: Mapped["User"] = relationship("User", back_populates="encrypted_chat_sessions")
+
+
+class EncryptedUserSecret(Base):
+    """Stores user secrets encrypted client-side (e.g., LLM API keys).
+    
+    The server stores the encrypted value, salt, and IV, but cannot decrypt
+    the data. Only the client with the user's password can decrypt.
+    """
+
+    __tablename__ = "encrypted_user_secret"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[UUID] = mapped_column(
+        PGUUID(as_uuid=True), ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+    )
+    # Type of secret (e.g., 'llm_api_key', 'openai_api_key')
+    secret_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    # Encrypted value
+    encrypted_value: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    # Salt for key derivation
+    salt: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    # IV for AES-GCM
+    iv: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    # Encryption format version
+    encryption_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "secret_type", name="uq_user_secret_type"),
+    )
+
+    user: Mapped["User"] = relationship("User", back_populates="encrypted_secrets")
 
 
 class ApiKey(Base):

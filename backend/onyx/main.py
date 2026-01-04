@@ -128,6 +128,8 @@ from onyx.server.settings.api import basic_router as settings_router
 from onyx.server.token_rate_limits.api import (
     router as token_rate_limit_settings_router,
 )
+from onyx.server.encrypted_chat.api import router as encrypted_sessions_router
+from onyx.server.encrypted_chat.secrets import router as encrypted_secrets_router
 from onyx.server.utils import BasicAuthenticationError
 from onyx.setup import setup_multitenant_onyx
 from onyx.setup import setup_onyx
@@ -416,6 +418,8 @@ def get_application(lifespan_override: Lifespan | None = None) -> FastAPI:
     include_router_with_global_prefix_prepended(application, federated_router)
     include_router_with_global_prefix_prepended(application, mcp_router)
     include_router_with_global_prefix_prepended(application, mcp_admin_router)
+    include_router_with_global_prefix_prepended(application, encrypted_sessions_router)
+    include_router_with_global_prefix_prepended(application, encrypted_secrets_router)
 
     if AUTH_TYPE != AuthType.DISABLED:
         include_router_with_global_prefix_prepended(application, pat_router)
