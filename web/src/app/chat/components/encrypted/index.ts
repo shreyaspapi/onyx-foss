@@ -13,3 +13,6 @@ export type { APIKeySetupProps } from "./APIKeySetup";
 
 export { default as EncryptionIndicator } from "./EncryptionIndicator";
 export type { EncryptionIndicatorProps } from "./EncryptionIndicator";
+
+export { default as EncryptedModeToggle } from "./EncryptedModeToggle";
+export type { EncryptedModeToggleProps } from "./EncryptedModeToggle";

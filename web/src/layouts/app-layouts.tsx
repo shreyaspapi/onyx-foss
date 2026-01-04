@@ -63,6 +63,7 @@ import {
 } from "@opal/icons";
 import MinimalMarkdown from "@/components/chat/MinimalMarkdown";
 import { useSettingsContext } from "@/components/settings/SettingsProvider";
+import { EncryptedModeToggle } from "@/app/chat/components/encrypted";
 
 const footerMarkdownComponents = {
   p: ({ children }) => (
@@ -328,39 +329,46 @@ function AppHeader() {
             </Text>
           </div>
 
-          {/* Right - contains the share and more-options buttons */}
+          {/* Right - contains the share, encrypted mode, and more-options buttons */}
           <div
             className={cn(
-              "flex-1 flex flex-row items-center justify-end px-1",
-              !currentChatSessionId && "invisible"
+              "flex-1 flex flex-row items-center justify-end px-1 gap-2"
             )}
           >
-            <Button
-              leftIcon={SvgShare}
-              transient={showShareModal}
-              tertiary
-              onClick={() => setShowShareModal(true)}
-            >
-              Share Chat
-            </Button>
-            <SimplePopover
-              trigger={
-                <IconButton
-                  icon={SvgMoreHorizontal}
-                  className="ml-2"
-                  transient={popoverOpen}
+            {/* Encrypted mode toggle - always visible */}
+            <EncryptedModeToggle />
+            
+            {/* Chat-specific actions - only visible when chat session exists */}
+            {currentChatSessionId && (
+              <>
+                <Button
+                  leftIcon={SvgShare}
+                  transient={showShareModal}
                   tertiary
-                />
-              }
-              onOpenChange={(state) => {
-                setPopoverOpen(state);
-                if (!state) setShowMoveOptions(false);
-              }}
-              side="bottom"
-              align="end"
-            >
-              <PopoverMenu>{popoverItems}</PopoverMenu>
-            </SimplePopover>
+                  onClick={() => setShowShareModal(true)}
+                >
+                  Share Chat
+                </Button>
+                <SimplePopover
+                  trigger={
+                    <IconButton
+                      icon={SvgMoreHorizontal}
+                      className="ml-2"
+                      transient={popoverOpen}
+                      tertiary
+                    />
+                  }
+                  onOpenChange={(state) => {
+                    setPopoverOpen(state);
+                    if (!state) setShowMoveOptions(false);
+                  }}
+                  side="bottom"
+                  align="end"
+                >
+                  <PopoverMenu>{popoverItems}</PopoverMenu>
+                </SimplePopover>
+              </>
+            )}
           </div>
         </header>
       )}
